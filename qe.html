@@ -52,6 +52,10 @@ input[type=number] {
     margin-top: 15px;
 }
 
+.mobile-actions {
+    display: none;
+}
+
 button {
     padding: 8px 18px;
     margin-right: 10px;
@@ -93,9 +97,59 @@ button {
     font-style: italic;
 }
 
+body.mobile-mode {
+    margin: 0;
+    min-height: 100vh;
+}
+
+body.mobile-mode .controls {
+    display: none;
+}
+
+body.mobile-mode #examples {
+    min-height: 100vh;
+    grid-template-columns: 1fr !important;
+}
+
+body.mobile-mode .exercise {
+    border: 0;
+    min-height: 100vh;
+    padding: 24px 24px 100px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+}
+
+body.mobile-mode .number {
+    display: none;
+}
+
+body.mobile-mode .equation {
+    font-size: clamp(28px, 8vw, 52px);
+}
+
+body.mobile-mode .mobile-actions {
+    display: flex;
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    justify-content: center;
+    gap: 12px;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.95);
+    border-top: 1px solid #ccc;
+}
+
+body.mobile-mode .mobile-actions button {
+    margin: 0;
+}
+
 @media print {
 
-    .controls {
+    .controls,
+    .mobile-actions {
         display: none;
     }
 
@@ -244,15 +298,22 @@ Coprime coefficients
 <div class="buttons">
 <button onclick="generate()">Generate</button>
 <button onclick="window.print()">Print</button>
+<button onclick="mobileVersion()">Mobile version</button>
 </div>
 
 </div>
 
 <div id="examples"></div>
 
+<div class="mobile-actions" aria-label="Mobile exercise controls">
+<button onclick="nextMobileEquation()">Next</button>
+<button onclick="fullVersion()">Full version</button>
+</div>
+
 <script>
 
 let randomFunc = Math.random;
+let fullVersionSettings = null;
 
 function cyrb53(str, seed = 0) {
     let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
@@ -483,9 +544,10 @@ function updateTypes() {
     });
 }
 
-function generate() {
+function generate(resetSeed = true) {
 
-    initSeed();
+    if (resetSeed)
+        initSeed();
 
     const count = Number(document.getElementById("count").value);
     const columns = Number(document.getElementById("columns").value);
@@ -541,6 +603,37 @@ function generate() {
 
     updateSolutions();
     updateTypes();
+}
+
+function mobileVersion() {
+    fullVersionSettings = {
+        count: document.getElementById("count").value,
+        columns: document.getElementById("columns").value
+    };
+
+    // One example is one row in the mobile layout.
+    document.getElementById("count").value = 1;
+    document.getElementById("columns").value = 1;
+    document.body.classList.add("mobile-mode");
+    generate();
+}
+
+function nextMobileEquation() {
+    // Keep the current random sequence so a seed also produces a sequence,
+    // rather than repeating the first equation every time.
+    generate(false);
+}
+
+function fullVersion() {
+    document.body.classList.remove("mobile-mode");
+
+    if (fullVersionSettings) {
+        document.getElementById("count").value = fullVersionSettings.count;
+        document.getElementById("columns").value = fullVersionSettings.columns;
+        fullVersionSettings = null;
+    }
+
+    generate();
 }
 
 document.getElementById("showSolutions")
