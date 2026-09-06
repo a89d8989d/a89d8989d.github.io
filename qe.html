@@ -144,6 +144,25 @@ body.mobile-mode .mobile-actions {
 
 body.mobile-mode .mobile-actions button {
     margin: 0;
+    min-height: 56px;
+    flex: 1 1 0;
+    max-width: 220px;
+    padding: 12px 16px;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+@media (max-width: 480px) {
+    body.mobile-mode .mobile-actions {
+        gap: 8px;
+        padding: 12px 8px;
+    }
+
+    body.mobile-mode .mobile-actions button {
+        min-height: 60px;
+        padding: 10px 8px;
+        font-size: 16px;
+    }
 }
 
 @media print {
@@ -307,6 +326,7 @@ Coprime coefficients
 
 <div class="mobile-actions" aria-label="Mobile exercise controls">
 <button onclick="nextMobileEquation()">Next</button>
+<button id="mobileSolutionButton" onclick="toggleMobileSolution()">Show solution</button>
 <button onclick="fullVersion()">Full version</button>
 </div>
 
@@ -314,6 +334,7 @@ Coprime coefficients
 
 let randomFunc = Math.random;
 let fullVersionSettings = null;
+let mobileSolutionVisible = false;
 
 function cyrb53(str, seed = 0) {
     let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
@@ -616,12 +637,27 @@ function mobileVersion() {
     document.getElementById("columns").value = 1;
     document.body.classList.add("mobile-mode");
     generate();
+    setMobileSolutionVisible(false);
 }
 
 function nextMobileEquation() {
     // Keep the current random sequence so a seed also produces a sequence,
     // rather than repeating the first equation every time.
     generate(false);
+    setMobileSolutionVisible(false);
+}
+
+function setMobileSolutionVisible(visible) {
+    mobileSolutionVisible = visible;
+    document.querySelectorAll(".solution").forEach(s => {
+        s.style.display = visible ? "block" : "none";
+    });
+    document.getElementById("mobileSolutionButton").textContent =
+        visible ? "Hide solution" : "Show solution";
+}
+
+function toggleMobileSolution() {
+    setMobileSolutionVisible(!mobileSolutionVisible);
 }
 
 function fullVersion() {
