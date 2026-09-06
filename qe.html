@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Vieta Practice Generator</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    margin: 20px;
+    background: white;
+}
+
+h1 {
+    margin-top: 0;
+}
+
+.controls {
+    border: 1px solid #888;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.controls-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 15px;
+}
+
+fieldset {
+    border: 1px solid #999;
+}
+
+legend {
+    font-weight: bold;
+}
+
+label {
+    display: inline-block;
+    margin: 4px 8px 4px 0;
+}
+
+input[type=number] {
+    width: 70px;
+}
+
+.buttons {
+    margin-top: 15px;
+}
+
+button {
+    padding: 8px 18px;
+    margin-right: 10px;
+    cursor: pointer;
+}
+
+#examples {
+    display: grid;
+    gap: 10px;
+}
+
+.exercise {
+    border: 1px solid black;
+    padding: 10px;
+    min-height: 90px;
+    page-break-inside: avoid;
+    break-inside: avoid;
+}
+
+.number {
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.equation {
+    font-size: 22px;
+    font-weight: bold;
+}
+
+.solution {
+    margin-top: 15px;
+    color: #444;
+}
+
+.type {
+    margin-top: 10px;
+    color: #666;
+    font-size: 14px;
+    font-style: italic;
+}
+
+@media print {
+
+    .controls {
+        display: none;
+    }
+
+    body {
+        margin: 0.5cm;
+    }
+
+    .exercise {
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="controls">
+
+<div class="controls-grid">
+
+<fieldset>
+<legend>Worksheet</legend>
+
+<label>
+Examples:
+<input id="count" type="number" value="30" min="1" max="500">
+</label>
+
+<br>
+
+<label>
+Columns:
+<input id="columns" type="number" value="3" min="1" max="6">
+</label>
+
+<br>
+
+<label>
+Seed:
+<input id="seed" type="text" placeholder="e.g. 6th grade 11/21" style="width: 140px;">
+</label>
+
+<br>
+
+<label>
+<input id="showSolutions" type="checkbox">
+Show solutions
+</label>
+
+<br>
+
+<label>
+<input id="showTypes" type="checkbox">
+Show type
+</label>
+
+</fieldset>
+
+<fieldset>
+<legend>Equation types</legend>
+
+<label>
+<input id="typeVieta" type="checkbox" checked>
+Standard (Vieta)
+</label>
+
+<br>
+
+<label>
+<input id="typeSum0" type="checkbox" checked>
+a + b + c = 0
+</label>
+
+<br>
+
+<label>
+<input id="typeAltSum0" type="checkbox" checked>
+a - b + c = 0
+</label>
+
+</fieldset>
+
+<fieldset>
+<legend>Roots</legend>
+
+<label>
+From
+<input id="rootMin" type="number" value="-8">
+</label>
+
+<label>
+To
+<input id="rootMax" type="number" value="8">
+</label>
+
+<br>
+
+<label>
+<input id="allowEqual" type="checkbox" checked>
+Equal roots
+</label>
+
+<br>
+
+<label>
+<input id="allowZero" type="checkbox" checked>
+Zero roots
+</label>
+
+</fieldset>
+
+<fieldset>
+<legend>Coefficient limits</legend>
+
+<label>
+|a| ≤
+<input id="maxA" type="number" value="1" min="1">
+</label>
+
+<br>
+
+<label>
+|b| ≤
+<input id="maxB" type="number" value="20">
+</label>
+
+<br>
+
+<label>
+|c| ≤
+<input id="maxC" type="number" value="40">
+</label>
+
+<br>
+
+<label>
+<input id="coprime" type="checkbox">
+Coprime coefficients
+</label>
+
+</fieldset>
+
+</div>
+
+<div class="buttons">
+<button onclick="generate()">Generate</button>
+<button onclick="window.print()">Print</button>
+</div>
+
+</div>
+
+<div id="examples"></div>
+
+<script>
+
+let randomFunc = Math.random;
+
+function cyrb53(str, seed = 0) {
+    let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
+    for (let i = 0, ch; i < str.length; i++) {
+        ch = str.charCodeAt(i);
+        h1 = Math.imul(h1 ^ ch, 2654435761);
+        h2 = Math.imul(h2 ^ ch, 1597334677);
+    }
+    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507);
+    h1 ^= Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+    h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507);
+    h2 ^= Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+    return 4294967296 * (2097151 & h2) + (h1 >>> 0);
+}
+
+function mulberry32(a) {
+    return function() {
+        let t = a += 0x6D2B79F5;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+}
+
+function initSeed() {
+    const seedStr = document.getElementById("seed").value.trim();
+    if (seedStr.length > 0) {
+        const seedVal = cyrb53(seedStr);
+        randomFunc = mulberry32(seedVal);
+    } else {
+        randomFunc = Math.random;
+    }
+}
+
+function randint(min, max) {
+    return Math.floor(randomFunc() * (max - min + 1)) + min;
+}
+
+function choice(arr) {
+    return arr[randint(0, arr.length - 1)];
+}
+
+function gcd(a, b) {
+    a = Math.abs(a);
+    b = Math.abs(b);
+    while (b) {
+        let t = b;
+        b = a % b;
+        a = t;
+    }
+    return a;
+}
+
+function formatFraction(num, den) {
+    if (den < 0) {
+        num = -num;
+        den = -den;
+    }
+    if (num === 0) return "0";
+    const g = gcd(num, den);
+    num /= g;
+    den /= g;
+    if (den === 1) return `${num}`;
+    return `${num}/${den}`;
+}
+
+function generateEquation() {
+
+    const rootMin = Number(document.getElementById("rootMin").value);
+    const rootMax = Number(document.getElementById("rootMax").value);
+
+    const allowEqual = document.getElementById("allowEqual").checked;
+    const allowZero = document.getElementById("allowZero").checked;
+    const coprime = document.getElementById("coprime").checked;
+
+    const maxA = Number(document.getElementById("maxA").value);
+    const maxB = Number(document.getElementById("maxB").value);
+    const maxC = Number(document.getElementById("maxC").value);
+
+    const typeVieta = document.getElementById("typeVieta").checked;
+    const typeSum0 = document.getElementById("typeSum0").checked;
+    const typeAltSum0 = document.getElementById("typeAltSum0").checked;
+
+    const allowedTypes = [];
+    if (typeVieta) allowedTypes.push("vieta");
+    if (typeSum0) allowedTypes.push("sum0");
+    if (typeAltSum0) allowedTypes.push("altsum0");
+
+    if (allowedTypes.length === 0) {
+        alert("Select at least one equation type.");
+        return null;
+    }
+
+    if (maxA < 1) {
+        alert("Limit for |a| must be at least 1.");
+        return null;
+    }
+
+    for (let attempt = 0; attempt < 10000; attempt++) {
+
+        const chosenType = choice(allowedTypes);
+
+        if (chosenType === "vieta") {
+            let r1 = randint(rootMin, rootMax);
+            let r2 = randint(rootMin, rootMax);
+
+            if (!allowEqual && r1 === r2)
+                continue;
+
+            if (!allowZero && (r1 === 0 || r2 === 0))
+                continue;
+
+            const a = randint(1, maxA);
+            if (a === 0) continue;
+
+            const b = -a * (r1 + r2);
+            const c = a * r1 * r2;
+
+            if (Math.abs(b) > maxB) continue;
+            if (Math.abs(c) > maxC) continue;
+
+            if (coprime && gcd(gcd(a, b), c) !== 1)
+                continue;
+
+            return {
+                a, b, c,
+                r1Str: formatFraction(r1, 1),
+                r2Str: formatFraction(r2, 1),
+                typeLabel: "Standard (Vieta)"
+            };
+        } else if (chosenType === "sum0") {
+            // a + b + c = 0 => x1 = 1, x2 = c/a
+            const a = randint(1, maxA);
+            if (a === 0) continue;
+
+            const c = randint(-maxC, maxC);
+            const b = -(a + c);
+
+            if (Math.abs(b) > maxB) continue;
+
+            const r2Val = c / a;
+
+            if (r2Val < rootMin || r2Val > rootMax) continue;
+            if (!allowZero && c === 0) continue;
+            if (!allowEqual && c === a) continue;
+
+            if (coprime && gcd(gcd(a, b), c) !== 1)
+                continue;
+
+            return {
+                a, b, c,
+                r1Str: "1",
+                r2Str: formatFraction(c, a),
+                typeLabel: "a + b + c = 0"
+            };
+        } else if (chosenType === "altsum0") {
+            // a - b + c = 0 => x1 = -1, x2 = -c/a
+            const a = randint(1, maxA);
+            if (a === 0) continue;
+
+            const c = randint(-maxC, maxC);
+            const b = a + c;
+
+            if (Math.abs(b) > maxB) continue;
+
+            const r2Val = -c / a;
+
+            if (r2Val < rootMin || r2Val > rootMax) continue;
+            if (!allowZero && c === 0) continue;
+            if (!allowEqual && -c === a) continue;
+
+            if (coprime && gcd(gcd(a, b), c) !== 1)
+                continue;
+
+            return {
+                a, b, c,
+                r1Str: "-1",
+                r2Str: formatFraction(-c, a),
+                typeLabel: "a - b + c = 0"
+            };
+        }
+    }
+
+    return null;
+}
+
+function equationText(q) {
+
+    let s = "";
+
+    if (q.a === 1)
+        s += "x²";
+    else if (q.a === -1)
+        s += "-x²";
+    else
+        s += q.a + "x²";
+
+    if (q.b > 0)
+        s += (q.b === 1) ? " + x" : " + " + q.b + "x";
+    else if (q.b < 0)
+        s += (q.b === -1) ? " - x" : " - " + (-q.b) + "x";
+
+    if (q.c > 0)
+        s += " + " + q.c;
+    else if (q.c < 0)
+        s += " - " + (-q.c);
+
+    s += " = 0";
+
+    return s;
+}
+
+function updateSolutions() {
+
+    const show = document.getElementById("showSolutions").checked;
+
+    document.querySelectorAll(".solution").forEach(s => {
+        s.style.display = show ? "block" : "none";
+    });
+}
+
+function updateTypes() {
+
+    const show = document.getElementById("showTypes").checked;
+
+    document.querySelectorAll(".type").forEach(t => {
+        t.style.display = show ? "block" : "none";
+    });
+}
+
+function generate() {
+
+    initSeed();
+
+    const count = Number(document.getElementById("count").value);
+    const columns = Number(document.getElementById("columns").value);
+
+    const container = document.getElementById("examples");
+
+    container.style.gridTemplateColumns =
+        `repeat(${columns}, 1fr)`;
+
+    container.innerHTML = "";
+
+    const used = new Set();
+
+    let index = 1;
+    let attempts = 0;
+    const maxAttempts = 10000;
+
+    while (index <= count && attempts < maxAttempts) {
+        attempts++;
+
+        const q = generateEquation();
+
+        if (q === null)
+            break;
+
+        const key = `${q.a},${q.b},${q.c}`;
+
+        if (used.has(key))
+            continue;
+
+        used.add(key);
+
+        const div = document.createElement("div");
+        div.className = "exercise";
+
+        div.innerHTML = `
+            <div class="number">${index}.</div>
+            <div class="equation">${equationText(q)}</div>
+            <div class="type">Type: ${q.typeLabel}</div>
+            <div class="solution">
+                x₁ = ${q.r1Str}, x₂ = ${q.r2Str}
+            </div>
+        `;
+
+        container.appendChild(div);
+
+        index++;
+    }
+
+    if (index === 1 && attempts >= maxAttempts) {
+        alert("Couldn't generate an equation with the current constraints.");
+    }
+
+    updateSolutions();
+    updateTypes();
+}
+
+document.getElementById("showSolutions")
+    .addEventListener("change", updateSolutions);
+
+document.getElementById("showTypes")
+    .addEventListener("change", updateTypes);
+
+generate();
+
+</script>
+
+</body>
+</html>
