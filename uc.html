@@ -58,17 +58,26 @@
     <div>
         <canvas id="circle" width="500" height="500"></canvas>
         <div class="controls">
-            <button onclick="previousAngle()">prev</button>
-            <button onclick="nextAngle()">next</button>
-            <button onclick="randomAngle()">random</button>
+            <button onclick="previousAngle()">Prev</button>
+            <button onclick="nextAngle()">Next</button>
+            <button onclick="randomAngle()">Random</button>
         </div>
+        <br>
+        <label>
+            <input type="checkbox" id="showFunctions" onchange="toggleFunctions()">
+            Show functions
+        </label>
+
     </div>
 
     <div class="answers">
         <div>t = <span class="answer" onclick="reveal('angle')">?</span></div>
-        <div>sin t = <span class="answer" onclick="reveal('sin')">?</span></div>
-        <div>cos t = <span class="answer" onclick="reveal('cos')">?</span></div>
-        <div>tg t = <span class="answer" onclick="reveal('tan')">?</span></div>
+
+        <div id="functionAnswers">
+            <div>sin t = <span class="answer" onclick="reveal('sin')">?</span></div>
+            <div>cos t = <span class="answer" onclick="reveal('cos')">?</span></div>
+            <div>tan t = <span class="answer" onclick="reveal('tan')">?</span></div>
+        </div>
     </div>
 </div>
 
@@ -100,17 +109,17 @@ const answers = [
     { angle: "0",       sin: "0",        cos: "1",        tan: "0" },
     { angle: "π/6",     sin: "1/2",      cos: "√3/2", tan: "√3/3" },
     { angle: "π/4",     sin: "√2/2", cos: "√2/2", tan: "1" },
-    { angle: "π/3",     sin: "√3/2", cos: "1/2",      tan: "√3)" },
+    { angle: "π/3",     sin: "√3/2", cos: "1/2",      tan: "√3" },
     { angle: "π/2",     sin: "1",        cos: "0",        tan: "undefined" },
-    { angle: "2π/3",    sin: "√3/2", cos: "-1/2",     tan: "-√3)" },
+    { angle: "2π/3",    sin: "√3/2", cos: "-1/2",     tan: "-√3" },
     { angle: "3π/4",    sin: "√2/2", cos: "-√2/2", tan: "-1" },
     { angle: "5π/6",    sin: "1/2",      cos: "-√3/2", tan: "-√3/3" },
     { angle: "π",       sin: "0",        cos: "-1",       tan: "0" },
     { angle: "-π/6",    sin: "-1/2",     cos: "√3/2", tan: "-√3/3" },
     { angle: "-π/4",    sin: "-√2/2", cos: "√2/2", tan: "-1" },
-    { angle: "-π/3",    sin: "-√3/2", cos: "1/2",      tan: "-√3)" },
+    { angle: "-π/3",    sin: "-√3/2", cos: "1/2",      tan: "-√3" },
     { angle: "-π/2",    sin: "-1",       cos: "0",        tan: "undefined" },
-    { angle: "-2π/3",   sin: "-√3/2", cos: "-1/2",     tan: "√3)" },
+    { angle: "-2π/3",   sin: "-√3/2", cos: "-1/2",     tan: "√3" },
     { angle: "-3π/4",   sin: "-√2/2", cos: "-√2/2", tan: "1" },
     { angle: "-5π/6",   sin: "-1/2",      cos: "-√3/2", tan: "√3/3" },
     { angle: "-π",      sin: "0",        cos: "-1",       tan: "0" }
@@ -255,6 +264,13 @@ function randomAngle() {
     update();
 }
 
+function toggleFunctions() {
+    const functions = document.getElementById("functionAnswers");
+    functions.style.display =
+        document.getElementById("showFunctions").checked ? "block" : "none";
+}
+
+toggleFunctions();
 draw();
 </script>
 
