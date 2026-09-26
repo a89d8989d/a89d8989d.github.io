@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unit Circle Trigonometry Exercise</title>
+<style>
+    body {
+        margin: 20px;
+        font-family: Arial, sans-serif;
+        color: #000;
+        background: #fff;
+    }
+
+    .container {
+        display: flex;
+        gap: 40px;
+        align-items: flex-start;
+    }
+
+    canvas {
+        border: 1px solid #000;
+    }
+
+    .answers {
+        padding-top: 20px;
+        font-size: 22px;
+        line-height: 1.8;
+        min-width: 180px;
+    }
+
+    .answer {
+        cursor: pointer;
+        text-decoration: underline;
+    }
+
+    .controls {
+        margin-top: 20px;
+    }
+
+    button {
+        font-size: 16px;
+        padding: 6px 14px;
+        margin-right: 8px;
+        background: #fff;
+        border: 1px solid #000;
+        cursor: pointer;
+    }
+
+    button:hover {
+        background: #eee;
+    }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <div>
+        <canvas id="circle" width="500" height="500"></canvas>
+        <div class="controls">
+            <button onclick="previousAngle()">prev</button>
+            <button onclick="nextAngle()">next</button>
+            <button onclick="randomAngle()">random</button>
+        </div>
+    </div>
+
+    <div class="answers">
+        <div>α = <span class="answer" onclick="reveal('angle')">?</span></div>
+        <div>sin α = <span class="answer" onclick="reveal('sin')">?</span></div>
+        <div>cos α = <span class="answer" onclick="reveal('cos')">?</span></div>
+        <div>tan α = <span class="answer" onclick="reveal('tan')">?</span></div>
+    </div>
+</div>
+
+<script>
+const canvas = document.getElementById("circle");
+const ctx = canvas.getContext("2d");
+
+const angles = [
+    0,
+    Math.PI / 6,
+    Math.PI / 4,
+    Math.PI / 3,
+    Math.PI / 2,
+    2 * Math.PI / 3,
+    3 * Math.PI / 4,
+    5 * Math.PI / 6,
+    Math.PI,
+    -Math.PI / 6,
+    -Math.PI / 4,
+    -Math.PI / 3,
+    -Math.PI / 2,
+    -2 * Math.PI / 3,
+    -3 * Math.PI / 4,
+    -5 * Math.PI / 6,
+    -Math.PI
+];
+
+const answers = [
+    { angle: "0",       sin: "0",        cos: "1",        tan: "0" },
+    { angle: "π/6",     sin: "1/2",      cos: "√3/2", tan: "√3/3" },
+    { angle: "π/4",     sin: "√2/2", cos: "√2/2", tan: "1" },
+    { angle: "π/3",     sin: "√3/2", cos: "1/2",      tan: "√3)" },
+    { angle: "π/2",     sin: "1",        cos: "0",        tan: "undefined" },
+    { angle: "2π/3",    sin: "√3/2", cos: "-1/2",     tan: "-√3)" },
+    { angle: "3π/4",    sin: "√2/2", cos: "-√2/2", tan: "-1" },
+    { angle: "5π/6",    sin: "1/2",      cos: "-√3/2", tan: "-√3/3" },
+    { angle: "π",       sin: "0",        cos: "-1",       tan: "0" },
+    { angle: "-π/6",    sin: "-1/2",     cos: "√3/2", tan: "-√3/3" },
+    { angle: "-π/4",    sin: "-√2/2", cos: "√2/2", tan: "-1" },
+    { angle: "-π/3",    sin: "-√3/2", cos: "1/2",      tan: "-√3)" },
+    { angle: "-π/2",    sin: "-1",       cos: "0",        tan: "undefined" },
+    { angle: "-2π/3",   sin: "-√3/2", cos: "-1/2",     tan: "√3)" },
+    { angle: "-3π/4",   sin: "-√2/2", cos: "-√2/2", tan: "1" },
+    { angle: "-5π/6",   sin: "-1/2",      cos: "-√3/2", tan: "√3/3" },
+    { angle: "-π",      sin: "0",        cos: "-1",       tan: "0" }
+];
+
+let current = 0;
+let revealed = {
+    angle: false,
+    sin: false,
+    cos: false,
+    tan: false
+};
+
+const cx = 250;
+const cy = 250;
+const radius = 180;
+const gridStep = radius * 0.5;
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Grid: one cell = half the circle radius.
+    ctx.strokeStyle = "#ddd";
+    ctx.lineWidth = 1;
+
+    for (let x = cx % gridStep; x <= canvas.width; x += gridStep) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+    }
+
+    for (let y = cy % gridStep; y <= canvas.height; y += gridStep) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+    }
+
+    // Unnamed axes.
+    ctx.strokeStyle = "#000";
+    ctx.lineWidth = 1;
+
+    ctx.beginPath();
+    ctx.moveTo(0, cy);
+    ctx.lineTo(canvas.width, cy);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(cx, 0);
+    ctx.lineTo(cx, canvas.height);
+    ctx.stroke();
+
+    // Unit circle.
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, 2 * Math.PI);
+    ctx.stroke();
+
+    // Point and dotted radius.
+    const angle = angles[current];
+    const x = cx + radius * Math.cos(angle);
+    const y = cy - radius * Math.sin(angle);
+
+    ctx.setLineDash([5, 5]);
+    ctx.strokeStyle = "#000";
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.fillStyle = "red";
+    ctx.beginPath();
+    ctx.arc(x, y, 6, 0, 2 * Math.PI);
+    ctx.fill();
+}
+
+function resetRevealed() {
+    revealed = {
+        angle: false,
+        sin: false,
+        cos: false,
+        tan: false
+    };
+
+    document.querySelectorAll(".answer").forEach(element => {
+        element.textContent = "?";
+    });
+}
+
+function update() {
+    resetRevealed();
+    draw();
+}
+
+function reveal(type) {
+    revealed[type] = true;
+    const elements = {
+        angle: document.querySelectorAll(".answer")[0],
+        sin: document.querySelectorAll(".answer")[1],
+        cos: document.querySelectorAll(".answer")[2],
+        tan: document.querySelectorAll(".answer")[3]
+    };
+
+    elements[type].textContent = answers[current][type];
+}
+
+function nextAngle() {
+    current = (current + 1) % angles.length;
+    update();
+}
+
+function previousAngle() {
+    current = (current - 1 + angles.length) % angles.length;
+    update();
+}
+
+function randomAngle() {
+    let next;
+    do {
+        next = Math.floor(Math.random() * angles.length);
+    } while (next === current);
+
+    current = next;
+    update();
+}
+
+draw();
+</script>
+
+</body>
+</html>
