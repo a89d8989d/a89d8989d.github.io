@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -65,10 +66,10 @@
     </div>
 
     <div class="answers">
-        <div>α = <span class="answer" onclick="reveal('angle')">?</span></div>
-        <div>sin α = <span class="answer" onclick="reveal('sin')">?</span></div>
-        <div>cos α = <span class="answer" onclick="reveal('cos')">?</span></div>
-        <div>tan α = <span class="answer" onclick="reveal('tan')">?</span></div>
+        <div>t = <span class="answer" onclick="reveal('angle')">?</span></div>
+        <div>sin t = <span class="answer" onclick="reveal('sin')">?</span></div>
+        <div>cos t = <span class="answer" onclick="reveal('cos')">?</span></div>
+        <div>tan t = <span class="answer" onclick="reveal('tan')">?</span></div>
     </div>
 </div>
 
@@ -178,7 +179,7 @@ function draw() {
     ctx.strokeStyle = "#000";
     ctx.beginPath();
     ctx.moveTo(cx, cy);
-    ctx.lineTo(x, y);
+    // ctx.lineTo(x, y);
     ctx.stroke();
     ctx.setLineDash([]);
 
